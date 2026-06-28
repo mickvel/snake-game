@@ -454,12 +454,12 @@
           <div class="stat-value" id="stat-best">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">TOTAL FOOD</div>
-          <div class="stat-value" id="stat-food">0</div>
+          <div class="stat-label">AVG SCORE</div>
+          <div class="stat-value" id="stat-avgscore">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">LONGEST SNAKE</div>
-          <div class="stat-value" id="stat-longest">0</div>
+          <div class="stat-label">TOTAL FOOD EATEN</div>
+          <div class="stat-value" id="stat-totalfood">0</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">TOTAL DEATHS</div>
@@ -714,13 +714,14 @@
   function renderStats() {
     var s = loadStats();
     var unlocks = getUnlocks();
+    var avg = s.gamesPlayed > 0 ? (s.totalFood / s.gamesPlayed).toFixed(1) : '0';
     document.getElementById('stat-games').textContent    = s.gamesPlayed;
-    document.getElementById('stat-best').textContent     = s.bestScore;
-    document.getElementById('stat-food').textContent     = s.totalFood;
-    document.getElementById('stat-longest').textContent  = s.longestSnake;
-    document.getElementById('stat-deaths').textContent   = s.totalDeaths;
-    document.getElementById('stat-time').textContent     = formatTime(s.totalTimeMs);
-    document.getElementById('stat-skins').textContent    = unlocks.length + ' / 6';
+    document.getElementById('stat-best').textContent   = s.bestScore;
+    document.getElementById('stat-avgscore').textContent = avg;
+    document.getElementById('stat-totalfood').textContent = s.totalFood;
+    document.getElementById('stat-deaths').textContent  = s.totalDeaths;
+    document.getElementById('stat-time').textContent    = formatTime(s.totalTimeMs);
+    document.getElementById('stat-skins').textContent   = unlocks.length + ' / 6';
   }
 
   function renderBadges(newIds) {
@@ -1067,7 +1068,6 @@
     // Persist stats
     stats.totalFood  += gameFood;
     stats.totalTicks += gameTicks;
-    if (snake.length > stats.longestSnake) stats.longestSnake = snake.length;
     if (score > stats.bestScore) stats.bestScore = score;
     stats.totalDeaths++;
     stats.totalTimeMs += gameTime;
