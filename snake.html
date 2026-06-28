@@ -1009,25 +1009,26 @@
     lerpPos = lerpTgt.map(function(p) { return { x: p.x, y: p.y }; });
     prevTailX = (snake[snake.length-1].x) * CELL + CELL/2;
     prevTailY = (snake[snake.length-1].y) * CELL + CELL/2;
-  }
-
-  // ── Update ────────────────────────────────────────────────
   function update(ts) {
     if (menuActive) return;
     dir = nextDir;
     var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
     if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return endGame();
     if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return endGame();
 
-    // Save old tail pixel pos for head lerp
-    var oldTail = snake[snake.length - 1];
+    // Save old tail for lerp reference before modifying snake
+    var oldTailX = snake[snake.length - 1].x;
+    var oldTailY = snake[snake.length - 1].y;
+
+    // Save lerpPos snapshot before move (used for eat-path body offsets)
+    var preMoveLerpPos = lerpPos.slice();
 
     snake.unshift(head);
 
     if (head.x === food.x && head.y === food.y) {
-      score++;
+      // ── ATE FOOD ──────────────────────────────────────────
       gameFood++;
+      score++;
       elScore.textContent = score;
       var best = parseInt(localStorage.getItem('snakeBest') || '0', 10);
       if (score > best) {
@@ -1039,19 +1040,26 @@
       spawnFood();
       if (score % 5 === 0 && speed > 60) speed -= 4;
       checkFoodAchievements();
-      // Eat: grow — lerp targets gain a segment at old tail pos
-      lerpPos.push({ x: oldTail.x * CELL + CELL/2, y: oldTail.y * CELL + CELL/2 });
-      lerpTgt = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      // Grow: body shifts forward, tail stays visually
+      // lerpPos[i] was already at pre-move grid pos → lerpTgt[i] (normal shift)
+      // lerpPos.push(new_tail_pixel) — new segment appears at old tail pixel
+      // lerpTgt stays same length as snake grid (we did unshift+pop)
+      var newTailPx = oldTailX * CELL + CELL / 2;
+      var newTailPy = oldTailY * CELL + CELL / 2;
+      lerpPos.push({ x: newTailPx, y: newTailPy }); // new tail pixel (old tail pos)
+      lerpTgt = snake.map(function (s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      // lerpTgt[last] is now the new grid tail pos — but we want tail to STAY
+      // at oldTail pixel, not move to grid pos. Overwrite:
+      lerpTgt[lerpTgt.length - 1] = { x: newTailPx, y: newTailPy };
       lerpProg = 0;
     } else {
-      // No eat: normal move — pop tail, record prev tail
+      // ── NORMAL MOVE ──────────────────────────────────────
       var popped = snake.pop();
-      prevTailX = popped.x * CELL + CELL/2;
-      prevTailY = popped.y * CELL + CELL/2;
-      // Snap lerpPos to current grid (tick just completed visually)
-      lerpPos = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
-      lerpTgt = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
-      lerpProg = 1;
+      prevTailX = popped.x * CELL + CELL / 2;
+      prevTailY = popped.y * CELL + CELL / 2;
+      lerpPos = snake.map(function (s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      lerpTgt = lerpPos.slice();
+      lerpProg = 0;
     }
   }
 
@@ -1513,7 +1521,7 @@
   loadMusic();
   showMenu();
   requestAnimationFrame(loop);
-
+}
 }());
 </script>
 </body>
