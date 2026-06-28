@@ -209,6 +209,7 @@
       font-size: 11px; color: #333; letter-spacing: 1px;
       display: flex; align-items: center; gap: 0;
     }
+    #menu-modal.show ~ #controls { pointer-events: none; }
     .ctrl-btn {
       background: none; border: 1px solid #1a3a2a; color: #00ff88;
       font-family: 'Courier New', monospace; font-size: 11px;
@@ -395,6 +396,10 @@
       <button class="menu-btn-sm on" id="menu-sound">SOUND ON</button>
     </div>
     <div class="menu-row" style="margin-top:6px">
+      <button class="menu-btn-sm" id="menu-stats">STATS</button>
+      <button class="menu-btn-sm" id="menu-badges">BADGES</button>
+    </div>
+    <div class="menu-row" style="margin-top:6px">
       <button class="menu-btn-sm" id="menu-skins">SKINS</button>
     </div>
   </div>
@@ -504,8 +509,6 @@
   <div id="controls">
     ARROW KEYS &nbsp;|&nbsp; WASD &nbsp;|&nbsp; SPACE TO RESTART
     <button class="ctrl-btn" id="sound-btn">SOUND ON</button>
-    <button class="ctrl-btn" id="stats-btn" style="margin-left:8px">STATS</button>
-    <button class="ctrl-btn" id="badges-btn" style="margin-left:8px">BADGES</button>
     <button class="ctrl-btn" id="skin-btn" style="margin-left:8px">SKINS</button>
   </div>
 
@@ -542,6 +545,8 @@
   var skinBtn        = document.getElementById('skin-btn');
   var statsModal     = document.getElementById('stats-modal');
   var badgesModal    = document.getElementById('badges-modal');
+  var menuStats     = document.getElementById('menu-stats');
+  var menuBadges    = document.getElementById('menu-badges');
 
   // ── Config ────────────────────────────────────────────────
   var COLS    = 20;
@@ -1439,19 +1444,16 @@
     skinModal.classList.add('show');
   }); } catch(e) {}
 
-  try { document.getElementById('stats-btn').addEventListener('click', function () {
-    overlay.classList.remove('show');
-    lbModal.classList.remove('show');
+  // Stats / Badges from menu
+  menuStats.addEventListener('click', function () {
     renderStats();
     statsModal.classList.add('show');
-  }); } catch(e) {}
+  });
 
-  try { document.getElementById('badges-btn').addEventListener('click', function () {
-    overlay.classList.remove('show');
-    lbModal.classList.remove('show');
+  menuBadges.addEventListener('click', function () {
     renderBadges();
     badgesModal.classList.add('show');
-  }); } catch(e) {}
+  });
 
   // ── Menu button events ────────────────────────────────────
   menuPlay.addEventListener('click', function () {
