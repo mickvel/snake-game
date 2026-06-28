@@ -773,13 +773,47 @@
     toastTimer = setTimeout(function () {
       toast.classList.remove('show');
       toastTimer = setTimeout(drainToast, 400);
-    }, 3000);
+  }
+
+  function spawnParticles(gridX, gridY, count, color) {
+    var i;
+    for (i = 0; i < count; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 1 + Math.random() * 3;
+      particles.push({
+        x:  gridX * CELL + CELL / 2,
+        y:  gridY * CELL + CELL / 2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life:   1.0,
+        maxLife: 0.6 + Math.random() * 0.3,
+        color:  color || '#FF6600',
+        size:   1.5 + Math.random() * 1.5
+      });
+    }
   }
 
   // Per-game in-memory trackers (reset each game)
   var gameStartTime = 0;
   var gameFood      = 0;
   var gameTicks     = 0;
+
+  // ── Particles ──────────────────────────────────────────────
+  var particles = [];
+
+  // ── Screen shake ──────────────────────────────────────────
+  var shakeEnd = 0;
+
+  // ── Smooth lerp ──────────────────────────────────────────
+  var lerpPos    = [];   // current visual pixel positions [{x,y},...]
+  var lerpTgt   = [];   // target grid pixel positions  [{x,y},...]
+  var lerpProg  = 1.0;  // 0→1 progress through tick
+  var prevTailX = 0;
+  var prevTailY = 0;
+
+  function lerpEase(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
 
   // ── Game state ────────────────────────────────────────────
   var snake, dir, nextDir, food, score, gameOver, speed, lastTick;
@@ -964,6 +998,15 @@
     var stats = loadStats();
     stats.gamesPlayed++;
     saveStats(stats);
+    // Visual effects — reset
+    particles = [];
+    shakeEnd  = 0;
+    lerpProg  = 1.0;
+    // Initialize lerp positions from starting snake
+    lerpTgt = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+    lerpPos = lerpTgt.map(function(p) { return { x: p.x, y: p.y }; });
+    prevTailX = (snake[snake.length-1].x) * CELL + CELL/2;
+    prevTailY = (snake[snake.length-1].y) * CELL + CELL/2;
   }
 
   // ── Update ────────────────────────────────────────────────
@@ -974,6 +1017,9 @@
 
     if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return endGame();
     if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return endGame();
+
+    // Save old tail pixel pos for head lerp
+    var oldTail = snake[snake.length - 1];
 
     snake.unshift(head);
 
@@ -987,11 +1033,23 @@
         elBest.textContent = score;
       }
       sfxEat();
+      spawnParticles(food.x, food.y, 12, '#FF6600');
       spawnFood();
       if (score % 5 === 0 && speed > 60) speed -= 4;
       checkFoodAchievements();
+      // Eat: grow — lerp targets gain a segment at old tail pos
+      lerpPos.push({ x: oldTail.x * CELL + CELL/2, y: oldTail.y * CELL + CELL/2 });
+      lerpTgt = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      lerpProg = 0;
     } else {
-      snake.pop();
+      // No eat: normal move — pop tail, record prev tail
+      var popped = snake.pop();
+      prevTailX = popped.x * CELL + CELL/2;
+      prevTailY = popped.y * CELL + CELL/2;
+      // Snap lerpPos to current grid (tick just completed visually)
+      lerpPos = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      lerpTgt = snake.map(function(s) { return { x: s.x * CELL + CELL/2, y: s.y * CELL + CELL/2 }; });
+      lerpProg = 1;
     }
   }
 
@@ -999,6 +1057,7 @@
     gameOver = true;
     stopMusic();
     sfxDeath();
+    shakeEnd = performance.now() + 400;
     overlay.classList.add('show');
     lbModal.classList.add('show');
     newUnlock = checkUnlocks(score);
@@ -1139,6 +1198,16 @@
       }
     }
 
+    // ── Screen shake ────────────────────────────────────────
+    var ox = 0, oy = 0;
+    var now = performance.now();
+    if (now < shakeEnd) {
+      var elapsed = shakeEnd - now;
+      var mag = 6 * (elapsed / 400);
+      ox = Math.random() * mag * 2 - mag;
+      oy = Math.random() * mag * 2 - mag;
+    }
+
     var fc = skinGlow(activeSkin);
     ctx.fillStyle   = '#ff4444';
     ctx.shadowColor = fc;
@@ -1146,24 +1215,63 @@
     ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
     ctx.shadowBlur  = 0;
 
+    // ── Smooth lerp snake drawing ───────────────────────────
+    var l = lerpEase(lerpProg);
+
     snake.forEach(function (s, i) {
       var alpha = 1 - (i / snake.length) * 0.5;
+
+      // Compute lerped pixel position
+      var px, py;
+      if (lerpProg >= 1.0) {
+        // Fully snapped — draw at grid position
+        px = s.x * CELL + CELL / 2;
+        py = s.y * CELL + CELL / 2;
+      } else {
+        if (i === 0) {
+          // Head: lerp from prevTail → new head grid
+          px = lerpPos[0].x + (prevTailX - lerpPos[0].x + (s.x * CELL + CELL/2 - prevTailX)) * l;
+          py = lerpPos[0].y + (prevTailY - lerpPos[0].y + (s.y * CELL + CELL/2 - prevTailY)) * l;
+          // Simpler: lerp from prevTail to actual head position
+          px = prevTailX + (s.x * CELL + CELL/2 - prevTailX) * l;
+          py = prevTailY + (s.y * CELL + CELL/2 - prevTailY) * l;
+        } else {
+          // Body: lerp from lerpPos[i] → lerpTgt[i]
+          px = lerpPos[i].x + (lerpTgt[i].x - lerpPos[i].x) * l;
+          py = lerpPos[i].y + (lerpTgt[i].y - lerpPos[i].y) * l;
+        }
+      }
+
       ctx.fillStyle = skinColor(activeSkin, alpha);
       if (i === 0) {
         ctx.shadowColor = skinGlow(activeSkin);
         ctx.shadowBlur  = 10;
-        ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+        ctx.fillRect(px - CELL/2 + 1, py - CELL/2 + 1, CELL - 2, CELL - 2);
         ctx.shadowBlur = 0;
         ctx.fillStyle  = '#050a07';
-        var ex = s.x * CELL, ey = s.y * CELL;
+        var ex = px - CELL/2, ey = py - CELL/2;
         if (dir.x === 1)  { ctx.fillRect(ex+16, ey+5,  4, 4); ctx.fillRect(ex+16, ey+15, 4, 4); }
         if (dir.x === -1) { ctx.fillRect(ex+4,  ey+5,  4, 4); ctx.fillRect(ex+4,  ey+15, 4, 4); }
         if (dir.y === 1)  { ctx.fillRect(ex+5,  ey+16, 4, 4); ctx.fillRect(ex+15, ey+16, 4, 4); }
         if (dir.y === -1) { ctx.fillRect(ex+5,  ey+4,  4, 4); ctx.fillRect(ex+15, ey+4,  4, 4); }
       } else {
-        ctx.fillRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4);
+        ctx.fillRect(px - CELL/2 + 2, py - CELL/2 + 2, CELL - 4, CELL - 4);
       }
     });
+
+    // ── Particles ──────────────────────────────────────────
+    ctx.save();
+    if (ox || oy) ctx.translate(ox, oy);
+    particles.forEach(function(p) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.restore();
   }
 
   // ── Game loop ─────────────────────────────────────────────
@@ -1172,6 +1280,21 @@
       gameTicks++;
       update(ts);
       lastTick = ts;
+    }
+    // Advance lerp progress between ticks
+    if (!menuActive && !gameOver && lerpProg < 1.0) {
+      var elapsed = ts - lastTick;
+      lerpProg = Math.min(1.0, lerpProg + elapsed / speed);
+    }
+    // Update particles
+    var i;
+    for (i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15;
+      p.life -= 0.03;
+      if (p.life <= 0) particles.splice(i, 1);
     }
     draw();
     requestAnimationFrame(loop);
