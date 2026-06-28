@@ -395,10 +395,6 @@
       <button class="menu-btn-sm on" id="menu-sound">SOUND ON</button>
     </div>
     <div class="menu-row" style="margin-top:6px">
-      <button class="menu-btn-sm" id="menu-stats">STATS</button>
-      <button class="menu-btn-sm" id="menu-badges">BADGES</button>
-    </div>
-    <div class="menu-row" style="margin-top:6px">
       <button class="menu-btn-sm" id="menu-skins">SKINS</button>
     </div>
   </div>
@@ -508,6 +504,8 @@
   <div id="controls">
     ARROW KEYS &nbsp;|&nbsp; WASD &nbsp;|&nbsp; SPACE TO RESTART
     <button class="ctrl-btn" id="sound-btn">SOUND ON</button>
+    <button class="ctrl-btn" id="stats-btn" style="margin-left:8px">STATS</button>
+    <button class="ctrl-btn" id="badges-btn" style="margin-left:8px">BADGES</button>
     <button class="ctrl-btn" id="skin-btn" style="margin-left:8px">SKINS</button>
   </div>
 
@@ -544,8 +542,6 @@
   var skinBtn        = document.getElementById('skin-btn');
   var statsModal     = document.getElementById('stats-modal');
   var badgesModal    = document.getElementById('badges-modal');
-  var menuStats     = document.getElementById('menu-stats');
-  var menuBadges    = document.getElementById('menu-badges');
 
   // ── Config ────────────────────────────────────────────────
   var COLS    = 20;
@@ -773,6 +769,7 @@
     toastTimer = setTimeout(function () {
       toast.classList.remove('show');
       toastTimer = setTimeout(drainToast, 400);
+    }, 3000);
   }
 
   function spawnParticles(gridX, gridY, count, color) {
@@ -1430,17 +1427,31 @@
   lbSubmit.addEventListener('click', submitScore);
   lbRestart.addEventListener('click', function () { showMenu(); });
 
-  soundBtn.addEventListener('click', function () {
+  try { soundBtn.addEventListener('click', function () {
     soundOn = !soundOn;
     localStorage.setItem('snakeSound', soundOn ? 'on' : 'off');
     syncSoundBtn();
     if (soundOn) { sfxClick(); startMusic(); } else { stopMusic(); }
-  });
+  }); } catch(e) {}
 
-  skinBtn.addEventListener('click', function () {
+  try { skinBtn.addEventListener('click', function () {
     renderSkinGrid();
     skinModal.classList.add('show');
-  });
+  }); } catch(e) {}
+
+  try { document.getElementById('stats-btn').addEventListener('click', function () {
+    overlay.classList.remove('show');
+    lbModal.classList.remove('show');
+    renderStats();
+    statsModal.classList.add('show');
+  }); } catch(e) {}
+
+  try { document.getElementById('badges-btn').addEventListener('click', function () {
+    overlay.classList.remove('show');
+    lbModal.classList.remove('show');
+    renderBadges();
+    badgesModal.classList.add('show');
+  }); } catch(e) {}
 
   // ── Menu button events ────────────────────────────────────
   menuPlay.addEventListener('click', function () {
@@ -1458,16 +1469,6 @@
   menuSkins.addEventListener('click', function () {
     renderSkinGrid();
     skinModal.classList.add('show');
-  });
-
-  menuStats.addEventListener('click', function () {
-    renderStats();
-    statsModal.classList.add('show');
-  });
-
-  menuBadges.addEventListener('click', function () {
-    renderBadges([]);
-    badgesModal.classList.add('show');
   });
 
   document.getElementById('stats-close').addEventListener('click', function () {
