@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Snake</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ff88;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #scoreboard {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      letter-spacing: 2px;
+    }
+    #scoreboard span { color: #555; }
+    #scoreboard b    { color: #00ff88; }
+    canvas {
+      display: block;
+      border: 1px solid #1a3a2a;
+      background: #050a07;
+      touch-action: none;
+    }
+    #overlay {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    #overlay.show      { display: flex; }
+    #overlay h2        { font-size: 22px; color: #ff4444; letter-spacing: 6px; text-align: center; }
+    #overlay p         { font-size: 11px; color: #666; letter-spacing: 2px; text-align: center; }
+    /* ── Menu screen ── */
+    #menu-modal {
+      position: fixed; inset: 0;
+      background: #0a0a0a;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #menu-modal.hide { display: none; }
+    #menu-title {
+      font-size: 48px;
+      letter-spacing: 12px;
+      color: #00ff88;
+      text-shadow: 0 0 20px #00ff88, 0 0 40px #00ff8844;
+      margin-bottom: 8px;
+    }
+    #menu-subtitle {
+      font-size: 11px;
+      color: #1a3a2a;
+      letter-spacing: 4px;
+      margin-bottom: 48px;
+    }
+    .menu-best {
+      font-size: 11px;
+      color: #333;
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+    }
+    .menu-best b { color: #00ff88; }
+    .menu-btn {
+      display: block;
+      width: 200px;
+      background: #00ff88;
+      color: #0a0a0a;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      padding: 14px 0;
+      cursor: pointer;
+      margin: 0 auto 12px;
+      text-align: center;
+    }
+    .menu-btn:hover { background: #00cc6a; }
+    .menu-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .menu-btn-sm {
+      background: none;
+      border: 1px solid #1a3a2a;
+      color: #555;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      cursor: pointer;
+    }
+    .menu-btn-sm:hover { border-color: #00ff88; color: #00ff88; }
+    .menu-btn-sm.on { border-color: #00ff88; color: #00ff88; }
+    #menu-skin-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    #menu-skin-swatch {
+      width: 32px; height: 12px; border-radius: 2px;
+      display: inline-block;
+    }
+    #menu-skin-label {
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 2px;
+    }
+    /* ── Leaderboard modal ── */
+    #lb-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 10;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #lb-modal.show { display: flex; }
+    #lb-box {
+      background: #0a0a0a;
+      border: 1px solid #1a3a2a;
+      padding: 28px 36px;
+      min-width: 320px; max-width: 90vw;
+    }
+    #lb-box h2        { font-size: 16px; letter-spacing: 5px; color: #00ff88; text-align: center; margin-bottom: 4px; }
+    #lb-subtitle     { text-align: center; font-size: 11px; color: #444; letter-spacing: 2px; margin-bottom: 20px; }
+    #lb-input-row    { display: flex; gap: 8px; margin-bottom: 16px; }
+    #lb-name {
+      flex: 1;
+      background: #050a07; border: 1px solid #1a3a2a;
+      color: #00ff88; font-family: 'Courier New', monospace;
+      font-size: 14px; letter-spacing: 2px; padding: 8px 12px;
+      outline: none; text-transform: uppercase; max-width: 160px;
+    }
+    #lb-name:focus      { border-color: #00ff88; }
+    #lb-name::placeholder { color: #333; }
+    #lb-submit {
+      background: #00ff88; color: #0a0a0a; border: none;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      font-weight: bold; letter-spacing: 2px; padding: 8px 16px; cursor: pointer;
+    }
+    #lb-submit:hover   { background: #00cc6a; }
+    #lb-submit:disabled { background: #1a3a2a; color: #444; cursor: default; }
+    #lb-rank-badge     { display: none; text-align: center; font-size: 12px; letter-spacing: 2px; margin-bottom: 12px; padding: 6px 0; }
+    #lb-rank-badge.show  { display: block; }
+    #lb-rank-badge.gold   { color: #ffd700; }
+    #lb-rank-badge.silver { color: #c0c0c0; }
+    #lb-rank-badge.bronze { color: #cd7f32; }
+    #lb-rank-badge.none   { color: #444; }
+    #skin-unlock {
+      display: none;
+      text-align: center;
+      font-size: 12px;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border: 1px solid;
+    }
+    #skin-unlock.show   { display: block; }
+    #skin-unlock.gold    { color: #ffd700; border-color: #ffd700; }
+    #skin-unlock.crystal { color: #00ffff; border-color: #00ffff; }
+    #skin-unlock.fire    { color: #ff4400; border-color: #ff4400; }
+    #skin-unlock.void    { color: #9933ff; border-color: #9933ff; }
+    #skin-unlock.rainbow { color: #ff00ff; border-color: #ff00ff; }
+    #lb-table { width: 100%; border-collapse: collapse; font-size: 12px; letter-spacing: 1px; }
+    #lb-table th { color: #333; font-weight: normal; letter-spacing: 3px; font-size: 10px; border-bottom: 1px solid #1a3a2a; padding: 4px 8px; text-align: left; }
+    #lb-table th:nth-child(2) { text-align: right; }
+    #lb-table td   { padding: 5px 8px; border-bottom: 1px solid #0f1a14; }
+    #lb-table td:nth-child(1) { color: #333; width: 32px; }
+    #lb-table td:nth-child(2) { text-align: right; color: #00ff88; }
+    #lb-table td:nth-child(3) { color: #00cc6a; }
+    #lb-table tr:first-child td { color: #ffd700; }
+    #lb-table tr:nth-child(2) td { color: #c0c0c0; }
+    #lb-table tr:nth-child(3) td { color: #cd7f32; }
+    #lb-table tr.me td { color: #ffffff; background: #0f1a14; }
+    #lb-loading, #lb-error { text-align: center; font-size: 11px; letter-spacing: 2px; color: #444; padding: 16px 0; }
+    #lb-error { color: #ff4444; display: none; }
+    #lb-actions    { margin-top: 16px; display: flex; justify-content: center; }
+    #lb-restart {
+      background: transparent; border: 1px solid #1a3a2a; color: #444;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      letter-spacing: 3px; padding: 8px 24px; cursor: pointer;
+    }
+    #lb-restart:hover { border-color: #00ff88; color: #00ff88; }
+    /* ── Controls ── */
+    #controls {
+      margin-top: 14px;
+      font-size: 11px; color: #333; letter-spacing: 1px;
+      display: flex; align-items: center; gap: 0;
+    }
+    .ctrl-btn {
+      background: none; border: 1px solid #1a3a2a; color: #00ff88;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      letter-spacing: 2px; padding: 4px 10px; cursor: pointer;
+    }
+    .ctrl-btn:hover { border-color: #00ff88; }
+    .ctrl-btn.muted { color: #444; border-color: #1a1a1a; }
+    /* ── Skin picker modal ── */
+    #skin-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 40;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #skin-modal.show { display: flex; }
+    #skin-box {
+      background: #0a0a0a;
+      border: 1px solid #1a3a2a;
+      padding: 24px 32px;
+      min-width: 340px; max-width: 90vw;
+    }
+    #skin-box h2 {
+      font-size: 14px; letter-spacing: 5px; color: #00ff88;
+      text-align: center; margin-bottom: 4px;
+    }
+    #skin-box p {
+      text-align: center; font-size: 10px; color: #333;
+      letter-spacing: 2px; margin-bottom: 20px;
+    }
+    #skin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .skin-cell {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; padding: 10px 8px; border: 1px solid #1a1a1a;
+      cursor: pointer; border-radius: 2px;
+    }
+    .skin-cell:hover:not(.locked) { border-color: #00ff88; }
+    .skin-cell.active { border-color: #00ff88; background: #0f1a14; }
+    .skin-cell.locked { opacity: 0.3; cursor: not-allowed; }
+    .skin-swatch {
+      width: 40px; height: 16px; border-radius: 2px;
+    }
+    .skin-cell-name {
+      font-size: 9px; color: #555; letter-spacing: 1px;
+    }
+    .skin-cell-req {
+      font-size: 8px; color: #2a2a2a; letter-spacing: 1px;
+    }
+    #skin-close {
+      display: block; margin: 0 auto;
+      background: transparent; border: 1px solid #1a3a2a; color: #444;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      letter-spacing: 3px; padding: 8px 24px; cursor: pointer;
+    }
+    #skin-close:hover { border-color: #00ff88; color: #00ff88; }
+    @media (max-width: 500px) {
+      canvas { width: 90vw; height: 90vw; image-rendering: pixelated; }
+      #lb-box, #skin-box { padding: 20px 16px; min-width: unset; }
+      #skin-grid { grid-template-columns: repeat(2, 1fr); }
+      #menu-title { font-size: 32px; letter-spacing: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- MENU SCREEN -->
+  <div id="menu-modal">
+    <div id="menu-title">SNAKE</div>
+    <div id="menu-subtitle">HIGH SCORE CHALLENGE</div>
+    <div id="menu-skin-row">
+      <div id="menu-skin-swatch"></div>
+      <div id="menu-skin-label">NEON</div>
+    </div>
+    <div class="menu-best">BEST &nbsp;<b id="menu-best">0</b></div>
+    <button class="menu-btn" id="menu-play">PLAY</button>
+    <div class="menu-row">
+      <button class="menu-btn-sm on" id="menu-sound">SOUND ON</button>
+      <button class="menu-btn-sm" id="menu-skins">SKINS</button>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div id="scoreboard">
+    <div>SCORE &nbsp;<b id="score">0</b></div>
+    <div>BEST &nbsp;<b id="best">0</b></div>
+  </div>
+
+  <div style="position:relative">
+    <canvas id="c"></canvas>
+    <div id="overlay">
+      <h2>GAME OVER</h2>
+      <p>SUBMIT YOUR SCORE</p>
+    </div>
+  </div>
+
+  <!-- Leaderboard modal -->
+  <div id="lb-modal">
+    <div id="lb-box">
+      <h2>LEADERBOARD</h2>
+      <p id="lb-subtitle">TOP 10 — ALL TIME</p>
+      <div id="lb-input-row">
+        <input id="lb-name" type="text" placeholder="YOUR NAME" maxlength="12" autocomplete="off" />
+        <button id="lb-submit">SUBMIT</button>
+      </div>
+      <div id="lb-rank-badge"></div>
+      <div id="skin-unlock"></div>
+      <div id="lb-loading">LOADING...</div>
+      <div id="lb-error"></div>
+      <table id="lb-table" style="display:none">
+        <thead><tr><th>#</th><th>SCORE</th><th>NAME</th></tr></thead>
+        <tbody id="lb-tbody"></tbody>
+      </table>
+      <div id="lb-actions">
+        <button id="lb-restart">PLAY AGAIN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skin picker modal -->
+  <div id="skin-modal">
+    <div id="skin-box">
+      <h2>SNAKE SKINS</h2>
+      <p>UNLOCK THROUGH HIGH SCORES</p>
+      <div id="skin-grid"></div>
+      <button id="skin-close">BACK</button>
+    </div>
+  </div>
+
+  <!-- Footer controls -->
+  <div id="controls">
+    ARROW KEYS &nbsp;|&nbsp; WASD &nbsp;|&nbsp; SPACE TO RESTART
+    <button class="ctrl-btn" id="sound-btn">SOUND ON</button>
+    <button class="ctrl-btn" id="skin-btn" style="margin-left:8px">SKINS</button>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Elements (cached) ─────────────────────────────────────
+  var canvas         = document.getElementById('c');
+  var ctx           = canvas.getContext('2d');
+  var elScore       = document.getElementById('score');
+  var elBest        = document.getElementById('best');
+  var overlay       = document.getElementById('overlay');
+  var lbModal       = document.getElementById('lb-modal');
+  var lbNameIn      = document.getElementById('lb-name');
+  var lbSubmit      = document.getElementById('lb-submit');
+  var lbBadge       = document.getElementById('lb-rank-badge');
+  var lbTable       = document.getElementById('lb-table');
+  var lbTbody       = document.getElementById('lb-tbody');
+  var lbLoad        = document.getElementById('lb-loading');
+  var lbError       = document.getElementById('lb-error');
+  var lbRestart     = document.getElementById('lb-restart');
+  var skinUnlock    = document.getElementById('skin-unlock');
+  var skinModal     = document.getElementById('skin-modal');
+  var skinGrid      = document.getElementById('skin-grid');
+  var menuModal     = document.getElementById('menu-modal');
+  var menuBest      = document.getElementById('menu-best');
+  var menuPlay      = document.getElementById('menu-play');
+  var menuSound     = document.getElementById('menu-sound');
+  var menuSkins     = document.getElementById('menu-skins');
+  var menuSkinSwatch= document.getElementById('menu-skin-swatch');
+  var menuSkinLabel = document.getElementById('menu-skin-label');
+  var soundBtn       = document.getElementById('sound-btn');
+  var skinBtn        = document.getElementById('skin-btn');
+
+  // ── Config ────────────────────────────────────────────────
+  var COLS    = 20;
+  var ROWS    = 20;
+  var CELL    = 24;
+  // Relative URL — uses the same host/port the game is served from.
+  // Works with any static file server or reverse proxy.
+  // To use an explicit API endpoint, set window.API_URL before loading this script,
+  // or replace this with your own URL (e.g. 'https://your-api.com/').
+  var API_URL = window.API_URL || '';
+  canvas.width  = COLS * CELL;
+  canvas.height = ROWS * CELL;
+
+  // ── Skin system ───────────────────────────────────────────
+  var SKINS = {
+    default: { name: 'NEON',    req: 0,   color: '#00ff88', glow: '#00ff88', altColor: '#00cc6a', type: 'solid' },
+    gold:    { name: 'GOLD',    req: 25,  color: '#ffd700', glow: '#ffaa00', altColor: '#ff8800', type: 'solid' },
+    crystal: { name: 'CRYSTAL', req: 75,  color: '#00ffff', glow: '#88ffff', altColor: '#00ccff', type: 'solid' },
+    fire:    { name: 'FIRE',    req: 150, color: '#ff4400', glow: '#ff2200', altColor: '#ff9900', type: 'gradient' },
+    void:    { name: 'VOID',    req: 300, color: '#6600cc', glow: '#9933ff', altColor: '#aa00ff', type: 'solid' },
+    rainbow: { name: 'RAINBOW',req: 500, color: '#ff0000', glow: '#ff8800', altColor: '#8800ff', type: 'rainbow' },
+  };
+  var SKIN_ORDER = ['default', 'gold', 'crystal', 'fire', 'void', 'rainbow'];
+
+  var activeSkin = localStorage.getItem('snakeSkin') || 'default';
+  var frameCount  = 0;
+  var newUnlock   = null;
+
+  function getUnlocks() {
+    return JSON.parse(localStorage.getItem('snakeUnlocks') || '["default"]');
+  }
+
+  function validateActiveSkin() {
+    var unlocks = getUnlocks();
+    if (unlocks.indexOf(activeSkin) === -1) {
+      activeSkin = 'default';
+      localStorage.setItem('snakeSkin', 'default');
+    }
+  }
+
+  function applySkinSwatch(el, skinId) {
+    var s = SKINS[skinId] || SKINS.default;
+    if (s.type === 'rainbow') {
+      el.style.background = 'linear-gradient(90deg,red,#ff0,lime,cyan,blue,magenta,red)';
+      el.style.backgroundSize = '200% 100%';
+    } else if (s.type === 'gradient') {
+      el.style.background = 'linear-gradient(90deg,' + s.color + ',' + s.altColor + ')';
+    } else {
+      el.style.background = s.color;
+    }
+  }
+
+  function updateMenuSkinPreview() {
+    if (!menuSkinSwatch) return;
+    var s = SKINS[activeSkin] || SKINS.default;
+    applySkinSwatch(menuSkinSwatch, activeSkin);
+    menuSkinLabel.textContent = s.name;
+  }
+
+  function checkUnlocks(finScore) {
+    var unlocks = getUnlocks();
+    var newList = unlocks.slice();
+    var found   = null;
+    SKIN_ORDER.forEach(function (sid) {
+      if (finScore >= SKINS[sid].req && newList.indexOf(sid) === -1) {
+        newList.push(sid);
+        found = sid;
+      }
+    });
+    if (found) {
+      localStorage.setItem('snakeUnlocks', JSON.stringify(newList));
+    }
+    return found;
+  }
+
+  function renderSkinGrid() {
+    if (!skinGrid) return;
+    validateActiveSkin();
+    var unlocks = getUnlocks();
+    skinGrid.innerHTML = '';
+    SKIN_ORDER.forEach(function (sid) {
+      var s        = SKINS[sid];
+      var unlocked = unlocks.indexOf(sid) !== -1;
+      var isActive = (activeSkin === sid);
+
+      var cell = document.createElement('div');
+      cell.className = 'skin-cell' + (isActive ? ' active' : '') + (!unlocked ? ' locked' : '');
+
+      var swatch = document.createElement('div');
+      swatch.className = 'skin-swatch';
+      applySkinSwatch(swatch, sid);
+
+      var name = document.createElement('div');
+      name.className = 'skin-cell-name';
+      name.textContent = s.name;
+
+      var req = document.createElement('div');
+      req.className = 'skin-cell-req';
+      req.textContent = unlocked ? 'UNLOCKED' : 'SCORE ' + s.req;
+
+      cell.appendChild(swatch);
+      cell.appendChild(name);
+      cell.appendChild(req);
+
+      if (unlocked) {
+        cell.addEventListener('click', function () {
+          activeSkin = sid;
+          localStorage.setItem('snakeSkin', sid);
+          renderSkinGrid();
+          updateMenuSkinPreview();
+        });
+      }
+
+      skinGrid.appendChild(cell);
+    });
+  }
+
+  // ── Game state ────────────────────────────────────────────
+  var snake, dir, nextDir, food, score, gameOver, speed, lastTick;
+  var menuActive = true;
+  var submitted  = false;
+  var touchX = 0, touchY = 0;
+
+  // ── Audio engine ──────────────────────────────────────────
+  var audioCtx    = null;
+  var soundOn     = true;
+  var musicBuf    = null;
+  var musicSrc    = null;
+  var musicLoaded = false;
+
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function ensureAudio() {
+    var ac = getCtx();
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+
+  function loadMusic() {
+    if (musicLoaded) return;
+    musicLoaded = true;
+    fetch('music.wav')
+      .then(function (r) { return r.arrayBuffer(); })
+      .then(function (ab) {
+        ensureAudio().decodeAudioData(ab, function (buf) {
+          musicBuf = buf;
+          if (soundOn) playMusic();
+        });
+      })
+      .catch(function () {});
+  }
+
+  function playMusic() {
+    if (!soundOn || !musicBuf) return;
+    var ac = ensureAudio();
+    stopMusicSrc();
+    var src = ac.createBufferSource();
+    src.buffer = musicBuf;
+    src.loop  = true;
+    src.connect(ac.destination);
+    src.start();
+    musicSrc = src;
+    src.onended = function () {
+      if (musicSrc === src) musicSrc = null;
+    };
+  }
+
+  function stopMusicSrc() {
+    if (musicSrc) {
+      try { musicSrc.stop(); } catch (e) {}
+      musicSrc = null;
+    }
+  }
+
+  // ── SFX ───────────────────────────────────────────────────
+  function sfxEat() {
+    if (!soundOn) return;
+    playTone(440 + score * 30, 0.08, 'square', 0.10);
+  }
+
+  function sfxDeath() {
+    if (!soundOn) return;
+    playTone(200, 0.15, 'sawtooth', 0.18);
+    setTimeout(function () { playTone(140, 0.20, 'sawtooth', 0.18); }, 150);
+    setTimeout(function () { playTone( 80, 0.30, 'sawtooth', 0.18); }, 320);
+  }
+
+  function sfxClick() {
+    if (!soundOn) return;
+    playTone(660, 0.04, 'sine', 0.07);
+  }
+
+  function playTone(freq, duration, type, vol) {
+    if (!soundOn) return;
+    try {
+      var c = ensureAudio();
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.connect(g);
+      g.connect(c.destination);
+      o.type = type;
+      o.frequency.setValueAtTime(freq, c.currentTime);
+      g.gain.setValueAtTime(vol, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
+      o.start(c.currentTime);
+      o.stop(c.currentTime + duration);
+    } catch (err) {}
+  }
+
+  function startMusic() {
+    if (!soundOn) return;
+    if (musicBuf) playMusic();
+  }
+
+  function stopMusic() {
+    stopMusicSrc();
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      ensureAudio();
+      if (soundOn && musicBuf && !musicSrc) playMusic();
+    }
+  });
+
+  // ── Menu ─────────────────────────────────────────────────
+  function showMenu() {
+    menuActive = true;
+    menuModal.classList.remove('hide');
+    menuBest.textContent = localStorage.getItem('snakeBest') || '0';
+    updateMenuSkinPreview();
+    syncSoundBtn();
+  }
+
+  function hideMenu() {
+    menuActive = false;
+    menuModal.classList.add('hide');
+  }
+
+  function syncSoundBtn() {
+    menuSound.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF';
+    menuSound.className   = 'menu-btn-sm' + (soundOn ? ' on' : '');
+    soundBtn.textContent = soundOn ? 'SOUND ON' : 'SOUND OFF';
+    soundBtn.className   = soundOn ? 'ctrl-btn' : 'ctrl-btn muted';
+  }
+
+  // ── Game init ─────────────────────────────────────────────
+  function spawnFood() {
+    var p;
+    do {
+      p = { x: (Math.random() * COLS) | 0, y: (Math.random() * ROWS) | 0 };
+    } while (snake.some(function (s) { return s.x === p.x && s.y === p.y; }));
+    food = p;
+  }
+
+  function startGame() {
+    validateActiveSkin();
+    hideMenu();
+    initGameVars();
+    startMusic();
+  }
+
+  function initGameVars() {
+    snake     = [{ x: 10, y: 10 }];
+    dir       = { x: 1, y: 0 };
+    nextDir   = { x: 1, y: 0 };
+    score     = 0;
+    speed     = 120;
+    lastTick  = 0;
+    gameOver  = false;
+    submitted = false;
+    newUnlock = null;
+    elScore.textContent = 0;
+    elBest.textContent  = localStorage.getItem('snakeBest') || '0';
+    overlay.classList.remove('show');
+    lbModal.classList.remove('show');
+    lbNameIn.style.display    = '';
+    lbSubmit.style.display    = '';
+    lbSubmit.disabled         = false;
+    lbSubmit.textContent      = 'SUBMIT';
+    lbBadge.className         = '';
+    lbBadge.style.display     = 'none';
+    skinUnlock.style.display  = 'none';
+    skinUnlock.className      = '';
+    lbTable.style.display     = 'none';
+    lbLoad.style.display      = 'block';
+    lbError.style.display     = 'none';
+    lbNameIn.value = localStorage.getItem('snakeName') || '';
+    spawnFood();
+  }
+
+  // ── Update ────────────────────────────────────────────────
+  function update(ts) {
+    if (menuActive) return;
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return endGame();
+    if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return endGame();
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      elScore.textContent = score;
+      var best = parseInt(localStorage.getItem('snakeBest') || '0', 10);
+      if (score > best) {
+        localStorage.setItem('snakeBest', score);
+        elBest.textContent = score;
+      }
+      sfxEat();
+      spawnFood();
+      if (score % 5 === 0 && speed > 60) speed -= 4;
+    } else {
+      snake.pop();
+    }
+  }
+
+  function endGame() {
+    gameOver = true;
+    stopMusic();
+    sfxDeath();
+    overlay.classList.add('show');
+    lbModal.classList.add('show');
+    newUnlock = checkUnlocks(score);
+    if (newUnlock) {
+      activeSkin = newUnlock;
+      localStorage.setItem('snakeSkin', newUnlock);
+    }
+    fetchLB();
+  }
+
+  // ── Draw ─────────────────────────────────────────────────
+  function drawMenu() {
+    frameCount++;
+    ctx.fillStyle = '#050a07';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0f1a14';
+    var x, y;
+    for (x = 0; x < COLS; x++) {
+      for (y = 0; y < ROWS; y++) {
+        ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+      }
+    }
+    ctx.fillStyle   = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur  = 6;
+    var t  = (frameCount * 2) % (COLS * ROWS);
+    var t2 = (frameCount * 2 + 120) % (COLS * ROWS);
+    var ix  = (t  % COLS) | 0;
+    var iy  = (t  / COLS) | 0;
+    var ix2 = (t2 % COLS) | 0;
+    var iy2 = (t2 / COLS) | 0;
+    ctx.fillRect(ix  * CELL + 4, iy  * CELL + 4, CELL - 8, CELL - 8);
+    ctx.fillRect(ix2 * CELL + 4, iy2 * CELL + 4, CELL - 8, CELL - 8);
+    ctx.shadowBlur = 0;
+  }
+
+  function skinColor(skinId, alpha) {
+    var s = SKINS[skinId] || SKINS.default;
+    if (s.type === 'rainbow') {
+      return 'hsla(' + ((frameCount * 3) % 360) + ',100%,65%,' + alpha + ')';
+    }
+    return s.color;
+  }
+
+  function skinGlow(skinId) {
+    var s = SKINS[skinId] || SKINS.default;
+    if (s.type === 'rainbow') {
+      return 'hsl(' + ((frameCount * 3 + 30) % 360) + ',100%,65%)';
+    }
+    return s.glow;
+  }
+
+  function draw() {
+    if (menuActive) {
+      drawMenu();
+      return;
+    }
+
+    frameCount++;
+    ctx.fillStyle = '#050a07';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#0f1a14';
+    var x, y;
+    for (x = 0; x < COLS; x++) {
+      for (y = 0; y < ROWS; y++) {
+        ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+      }
+    }
+
+    var fc = skinGlow(activeSkin);
+    ctx.fillStyle   = '#ff4444';
+    ctx.shadowColor = fc;
+    ctx.shadowBlur  = 8;
+    ctx.fillRect(food.x * CELL + 3, food.y * CELL + 3, CELL - 6, CELL - 6);
+    ctx.shadowBlur  = 0;
+
+    snake.forEach(function (s, i) {
+      var alpha = 1 - (i / snake.length) * 0.5;
+      ctx.fillStyle = skinColor(activeSkin, alpha);
+      if (i === 0) {
+        ctx.shadowColor = skinGlow(activeSkin);
+        ctx.shadowBlur  = 10;
+        ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle  = '#050a07';
+        var ex = s.x * CELL, ey = s.y * CELL;
+        if (dir.x === 1)  { ctx.fillRect(ex+16, ey+5,  4, 4); ctx.fillRect(ex+16, ey+15, 4, 4); }
+        if (dir.x === -1) { ctx.fillRect(ex+4,  ey+5,  4, 4); ctx.fillRect(ex+4,  ey+15, 4, 4); }
+        if (dir.y === 1)  { ctx.fillRect(ex+5,  ey+16, 4, 4); ctx.fillRect(ex+15, ey+16, 4, 4); }
+        if (dir.y === -1) { ctx.fillRect(ex+5,  ey+4,  4, 4); ctx.fillRect(ex+15, ey+4,  4, 4); }
+      } else {
+        ctx.fillRect(s.x * CELL + 2, s.y * CELL + 2, CELL - 4, CELL - 4);
+      }
+    });
+  }
+
+  // ── Game loop ─────────────────────────────────────────────
+  function loop(ts) {
+    if (!gameOver && !menuActive && ts - lastTick >= speed) {
+      update(ts);
+      lastTick = ts;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ── Leaderboard ───────────────────────────────────────────
+  function fetchLB() {
+    fetch(API_URL + '/api/scores')
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderLB(data.scores); })
+      .catch(function () {
+        lbLoad.style.display = 'none';
+        lbError.style.display = 'block';
+        lbError.textContent = 'CANNOT REACH LEADERBOARD';
+      });
+  }
+
+  function renderLB(scores) {
+    lbLoad.style.display = 'none';
+    lbTable.style.display = '';
+
+    if (newUnlock) {
+      var s = SKINS[newUnlock];
+      skinUnlock.textContent = '\u2605 NEW SKIN: ' + s.name + ' \u2605 (score ' + s.req + ')';
+      skinUnlock.className   = 'show ' + newUnlock;
+      skinUnlock.style.display = 'block';
+    }
+
+    lbTbody.innerHTML = '';
+    scores.forEach(function (entry, i) {
+      var tr  = document.createElement('tr');
+      var isMe = submitted &&
+        entry.name === lbNameIn.value.trim().toUpperCase() &&
+        entry.score === score;
+      if (isMe) tr.className = 'me';
+      tr.innerHTML = '<td>' + (i + 1) + '</td><td>' + entry.score + '</td><td>' + escHtml(entry.name) + '</td>';
+      lbTbody.appendChild(tr);
+    });
+    if (scores.length === 0) {
+      var tr2 = document.createElement('tr');
+      tr2.innerHTML = '<td colspan="3" style="text-align:center;color:#333;padding:12px">NO SCORES YET — BE FIRST!</td>';
+      lbTbody.appendChild(tr2);
+    }
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function submitScore() {
+    if (submitted) return;
+    var name = (lbNameIn.value.trim() || 'ANON').toUpperCase().slice(0, 12);
+    localStorage.setItem('snakeName', name);
+    lbSubmit.disabled  = true;
+    lbSubmit.textContent = '...';
+    fetch(API_URL + '/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, score: score })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        submitted = true;
+        lbNameIn.style.display    = 'none';
+        lbSubmit.style.display    = 'none';
+        var rank = data.rank;
+        if (rank !== null) {
+          lbBadge.style.display = 'block';
+          if (rank === 1)           { lbBadge.className = 'gold';   lbBadge.textContent = '\u2605 #1 NEW RECORD! \u2605'; }
+          else if (rank <= 3)      { lbBadge.className = 'silver'; lbBadge.textContent = 'NEW RANK: #' + rank; }
+          else                     { lbBadge.className = 'bronze'; lbBadge.textContent = 'RANKED #' + rank; }
+        } else {
+          lbBadge.style.display = 'block';
+          lbBadge.className     = 'none';
+          lbBadge.textContent   = 'NOT IN TOP 10';
+        }
+        renderLB(data.scores);
+      })
+      .catch(function () {
+        lbSubmit.disabled    = false;
+        lbSubmit.textContent = 'RETRY';
+      });
+  }
+
+  // ── Input: keyboard ───────────────────────────────────────
+  var DIR_MAP = {
+    ArrowUp:   { x:  0, y: -1 }, KeyW: { x:  0, y: -1 },
+    ArrowDown: { x:  0, y:  1 }, KeyS: { x:  0, y:  1 },
+    ArrowLeft: { x: -1, y:  0 }, KeyA: { x: -1, y:  0 },
+    ArrowRight:{ x:  1, y:  0 }, KeyD: { x:  1, y:  0 },
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (menuActive) {
+      if (e.code === 'Space' || e.code === 'Enter') { startGame(); e.preventDefault(); }
+      return;
+    }
+    if (e.code === 'Space' || e.code === 'Enter') {
+      if (lbModal.classList.contains('show')) {
+        if (!submitted) submitScore(); else showMenu();
+      } else if (gameOver) {
+        showMenu();
+      }
+      return;
+    }
+    var d = DIR_MAP[e.code];
+    if (d && !(d.x === -dir.x && d.y === -dir.y)) {
+      nextDir = d;
+      e.preventDefault();
+    }
+  });
+
+  // ── Input: touch swipe ────────────────────────────────────
+  canvas.addEventListener('touchstart', function (e) {
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function (e) {
+    if (menuActive) { startGame(); e.preventDefault(); return; }
+    var dx = e.changedTouches[0].clientX - touchX;
+    var dy = e.changedTouches[0].clientY - touchY;
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    var d = Math.abs(dx) > Math.abs(dy)
+      ? (dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 })
+      : (dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 });
+    if (!(d.x === -dir.x && d.y === -dir.y)) nextDir = d;
+    e.preventDefault();
+  }, { passive: false });
+
+  // ── Button events ─────────────────────────────────────────
+  lbSubmit.addEventListener('click', submitScore);
+  lbRestart.addEventListener('click', function () { showMenu(); });
+
+  soundBtn.addEventListener('click', function () {
+    soundOn = !soundOn;
+    localStorage.setItem('snakeSound', soundOn ? 'on' : 'off');
+    syncSoundBtn();
+    if (soundOn) { sfxClick(); startMusic(); } else { stopMusic(); }
+  });
+
+  skinBtn.addEventListener('click', function () {
+    renderSkinGrid();
+    skinModal.classList.add('show');
+  });
+
+  // ── Menu button events ────────────────────────────────────
+  menuPlay.addEventListener('click', function () {
+    sfxClick();
+    startGame();
+  });
+
+  menuSound.addEventListener('click', function () {
+    soundOn = !soundOn;
+    localStorage.setItem('snakeSound', soundOn ? 'on' : 'off');
+    syncSoundBtn();
+    if (soundOn) { sfxClick(); startMusic(); } else { stopMusic(); }
+  });
+
+  menuSkins.addEventListener('click', function () {
+    renderSkinGrid();
+    skinModal.classList.add('show');
+  });
+  document.getElementById('skin-close').addEventListener('click', function (e) {
+    e.stopPropagation();
+    skinModal.classList.remove('show');
+    updateMenuSkinPreview();
+  });
+
+  skinModal.addEventListener('click', function (e) {
+    if (e.target === skinModal) {
+      skinModal.classList.remove('show');
+      updateMenuSkinPreview();
+    }
+  });
+
+  // ── Rainbow swatch animation ────────────────────────────────
+  var styleEl = document.createElement('style');
+  styleEl.textContent = '@keyframes rgbshift { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }';
+  document.head.appendChild(styleEl);
+
+  // ── Boot ─────────────────────────────────────────────────
+  soundOn     = localStorage.getItem('snakeSound') !== 'off';
+  activeSkin  = localStorage.getItem('snakeSkin') || 'default';
+  validateActiveSkin();
+  elBest.textContent = localStorage.getItem('snakeBest') || '0';
+  loadMusic();
+  showMenu();
+  requestAnimationFrame(loop);
+
+}());
+</script>
+</body>
+</html>
