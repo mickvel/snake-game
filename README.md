@@ -8,6 +8,9 @@ A single-file Snake game with procedural chiptune music, a skin unlock system, a
 
 ## Screenshots
 
+### Main Menu
+![Main Menu](screenshots/menu.png)
+
 ### Gameplay
 ![Gameplay](screenshots/gameplay.png)
 
