@@ -271,10 +271,111 @@
       letter-spacing: 3px; padding: 8px 24px; cursor: pointer;
     }
     #skin-close:hover { border-color: #00ff88; color: #00ff88; }
+    /* ── Stats modal ── */
+    #stats-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 40;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #stats-modal.show { display: flex; }
+    #stats-box {
+      background: #0a0a0a;
+      border: 1px solid #1a3a2a;
+      padding: 28px 36px;
+      min-width: 340px; max-width: 90vw;
+    }
+    #stats-box h2 { font-size: 14px; letter-spacing: 5px; color: #00ff88; text-align: center; margin-bottom: 20px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; margin-bottom: 16px; }
+    .stat-card { text-align: center; }
+    .stat-label { font-size: 9px; color: #333; letter-spacing: 2px; margin-bottom: 4px; }
+    .stat-value { font-size: 22px; color: #00ff88; letter-spacing: 1px; }
+    .stat-row-full { text-align: center; margin-top: 8px; }
+    #stats-close {
+      display: block; margin: 12px auto 0;
+      background: transparent; border: 1px solid #1a3a2a; color: #444;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      letter-spacing: 3px; padding: 8px 24px; cursor: pointer;
+    }
+    #stats-close:hover { border-color: #00ff88; color: #00ff88; }
+
+    /* ── Badges modal ── */
+    #badges-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 40;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #badges-modal.show { display: flex; }
+    #badges-box {
+      background: #0a0a0a;
+      border: 1px solid #1a3a2a;
+      padding: 24px 32px;
+      min-width: 340px; max-width: 90vw;
+    }
+    #badges-box h2 { font-size: 14px; letter-spacing: 5px; color: #00ff88; text-align: center; margin-bottom: 4px; }
+    #badges-box p  { text-align: center; font-size: 10px; color: #333; letter-spacing: 2px; margin-bottom: 16px; }
+    .badge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .badge-cell {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 5px; padding: 10px 6px; border: 1px solid #1a1a1a;
+      border-radius: 2px; text-align: center;
+    }
+    .badge-cell.unlocked { border-color: #1a3a2a; }
+    .badge-cell.locked { opacity: 0.3; }
+    .badge-cell.locked-secret { opacity: 0.18; }
+    .badge-cell.new-badge {
+      animation: badge-pulse 0.8s ease-in-out 4;
+      border-color: #ffd700;
+    }
+    @keyframes badge-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0); }
+      50% { box-shadow: 0 0 0 5px rgba(255,215,0,0.4); }
+    }
+    .badge-icon { font-size: 24px; line-height: 1; }
+    .badge-name { font-size: 9px; color: #555; letter-spacing: 1px; }
+    .badge-cell.unlocked .badge-name { color: #00cc6a; }
+    .badge-desc { font-size: 7px; color: #2a2a2a; letter-spacing: 0px; line-height: 1.3; }
+    #badges-close {
+      display: block; margin: 0 auto;
+      background: transparent; border: 1px solid #1a3a2a; color: #444;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      letter-spacing: 3px; padding: 8px 24px; cursor: pointer;
+    }
+    #badges-close:hover { border-color: #00ff88; color: #00ff88; }
+
+    /* ── Achievement toast ── */
+    #achievement-toast {
+      position: fixed;
+      top: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: #0a0a0a;
+      border: 1px solid #ffd700;
+      padding: 10px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px; letter-spacing: 1px;
+      color: #ffd700;
+      z-index: 100;
+      text-align: center;
+      min-width: 240px;
+      display: none;
+      white-space: nowrap;
+    }
+    #achievement-toast.show { display: block; }
+    #achievement-toast .toast-title { font-size: 12px; letter-spacing: 3px; margin-bottom: 2px; }
+    #achievement-toast .toast-desc  { font-size: 9px; color: #aaa; letter-spacing: 1px; }
+
     @media (max-width: 500px) {
       canvas { width: 90vw; height: 90vw; image-rendering: pixelated; }
-      #lb-box, #skin-box { padding: 20px 16px; min-width: unset; }
+      #lb-box, #skin-box, #stats-box, #badges-box { padding: 20px 16px; min-width: unset; }
       #skin-grid { grid-template-columns: repeat(2, 1fr); }
+      .badge-grid { grid-template-columns: repeat(2, 1fr); }
       #menu-title { font-size: 32px; letter-spacing: 8px; }
     }
   </style>
@@ -292,6 +393,12 @@
     <button class="menu-btn" id="menu-play">PLAY</button>
     <div class="menu-row">
       <button class="menu-btn-sm on" id="menu-sound">SOUND ON</button>
+    </div>
+    <div class="menu-row" style="margin-top:6px">
+      <button class="menu-btn-sm" id="menu-stats">STATS</button>
+      <button class="menu-btn-sm" id="menu-badges">BADGES</button>
+    </div>
+    <div class="menu-row" style="margin-top:6px">
       <button class="menu-btn-sm" id="menu-skins">SKINS</button>
     </div>
   </div>
@@ -331,6 +438,60 @@
         <button id="lb-restart">PLAY AGAIN</button>
       </div>
     </div>
+  </div>
+
+  <!-- Stats modal -->
+  <div id="stats-modal">
+    <div id="stats-box">
+      <h2>STATISTICS</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">GAMES PLAYED</div>
+          <div class="stat-value" id="stat-games">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">BEST SCORE</div>
+          <div class="stat-value" id="stat-best">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TOTAL FOOD</div>
+          <div class="stat-value" id="stat-food">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">LONGEST SNAKE</div>
+          <div class="stat-value" id="stat-longest">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TOTAL DEATHS</div>
+          <div class="stat-value" id="stat-deaths">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">TIME PLAYED</div>
+          <div class="stat-value" id="stat-time">0s</div>
+        </div>
+      </div>
+      <div class="stat-row-full">
+        <div class="stat-label">SKINS UNLOCKED</div>
+        <div class="stat-value" id="stat-skins">0 / 6</div>
+      </div>
+      <button id="stats-close">BACK</button>
+    </div>
+  </div>
+
+  <!-- Badges modal -->
+  <div id="badges-modal">
+    <div id="badges-box">
+      <h2>BADGES</h2>
+      <p id="badges-subtitle">HIDDEN ACHIEVEMENTS EXIST</p>
+      <div class="badge-grid" id="badge-grid"></div>
+      <button id="badges-close">BACK</button>
+    </div>
+  </div>
+
+  <!-- Achievement toast -->
+  <div id="achievement-toast">
+    <div class="toast-title" id="toast-title"></div>
+    <div class="toast-desc" id="toast-desc"></div>
   </div>
 
   <!-- Skin picker modal -->
@@ -381,6 +542,10 @@
   var menuSkinLabel = document.getElementById('menu-skin-label');
   var soundBtn       = document.getElementById('sound-btn');
   var skinBtn        = document.getElementById('skin-btn');
+  var statsModal     = document.getElementById('stats-modal');
+  var badgesModal    = document.getElementById('badges-modal');
+  var menuStats     = document.getElementById('menu-stats');
+  var menuBadges    = document.getElementById('menu-badges');
 
   // ── Config ────────────────────────────────────────────────
   var COLS    = 20;
@@ -497,6 +662,123 @@
       skinGrid.appendChild(cell);
     });
   }
+
+  // ── Achievements & Stats ──────────────────────────────────
+  var BADGES = [
+    { id: 'first_blood',  name: 'FIRST BLOOD',   desc: 'Eat 1 food',                        icon: '\u2665', secret: false },
+    { id: 'glutton',       name: 'GLUTTON',        desc: 'Eat 50 food in one game',           icon: '\u26cf', secret: false },
+    { id: 'behemoth',      name: 'BEHEMOTH',       desc: 'Reach 20 snake length',             icon: '\u2726', secret: false },
+    { id: 'speedrun',      name: 'SPEEDRUN',       desc: 'Finish in under 15 seconds',        icon: '\u26a1', secret: false },
+    { id: 'marathon',      name: 'MARATHON',        desc: 'Survive 300 ticks',                icon: '\u2708', secret: false },
+    { id: 'highroller',    name: 'HIGH ROLLER',     desc: 'Score 100+',                       icon: '\u2728', secret: false },
+    { id: 'addict',        name: 'ADDICT',          desc: 'Play 50 games',                    icon: '\u2666', secret: false },
+    { id: 'unlocker',      name: 'COLLECTOR',       desc: 'Unlock 3 skins',                  icon: '\u2605', secret: false },
+    { id: 'all_skins',     name: 'COMPLETIONIST',   desc: 'Unlock all 6 skins',              icon: '\u2606', secret: false },
+    { id: 'slowpoke',      name: 'SLOWPOKE',        desc: 'Die without eating any food',      icon: '\u2689', secret: false },
+    { id: 'speedster',     name: 'SPEEDSTER',       desc: 'Reach max game speed',             icon: '\u25b2', secret: false },
+    { id: 'centurion',     name: 'CENTURION',       desc: 'Score exactly 100',                icon: '\u2694', secret: true  },
+    { id: 'veteran',       name: 'VETERAN',         desc: 'Play 200 games',                  icon: '\u2663', secret: true  },
+    { id: 'grandmaster',   name: 'GRANDMASTER',     desc: 'Score 500+',                       icon: '\u2660', secret: true  },
+    { id: 'legendary',     name: 'LEGENDARY',        desc: 'Score 1000+',                      icon: '\u2600', secret: true  },
+    { id: 'food_hoarder',  name: 'FOOD HOARDER',    desc: 'Eat 500 total food',                icon: '\u26ab', secret: true  },
+  ];
+
+  var ACHIEVEMENTS_KEY = 'snakeAchievements';
+  var STATS_KEY        = 'snakeStats';
+
+  var defaultStats = { gamesPlayed: 0, totalFood: 0, totalTicks: 0, longestSnake: 0, bestScore: 0, totalDeaths: 0, totalTimeMs: 0 };
+
+  function loadStats() {
+    return JSON.parse(localStorage.getItem(STATS_KEY) || 'null') || Object.assign({}, defaultStats);
+  }
+
+  function saveStats(s) {
+    localStorage.setItem(STATS_KEY, JSON.stringify(s));
+  }
+
+  function loadAchievements() {
+    return JSON.parse(localStorage.getItem(ACHIEVEMENTS_KEY) || '[]');
+  }
+
+  function saveAchievements(a) {
+    localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(a));
+  }
+
+  function formatTime(ms) {
+    var s = Math.floor(ms / 1000);
+    if (s < 60)  return s + 's';
+    if (s < 3600) return (Math.floor(s / 60)) + 'm ' + (s % 60) + 's';
+    return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  }
+
+  function renderStats() {
+    var s = loadStats();
+    var unlocks = getUnlocks();
+    document.getElementById('stat-games').textContent    = s.gamesPlayed;
+    document.getElementById('stat-best').textContent     = s.bestScore;
+    document.getElementById('stat-food').textContent     = s.totalFood;
+    document.getElementById('stat-longest').textContent  = s.longestSnake;
+    document.getElementById('stat-deaths').textContent   = s.totalDeaths;
+    document.getElementById('stat-time').textContent     = formatTime(s.totalTimeMs);
+    document.getElementById('stat-skins').textContent    = unlocks.length + ' / 6';
+  }
+
+  function renderBadges(newIds) {
+    var el    = document.getElementById('badge-grid');
+    var done  = loadAchievements();
+    newIds    = newIds || [];
+    el.innerHTML = '';
+    BADGES.forEach(function (b) {
+      var unlocked = done.indexOf(b.id) !== -1;
+      var isNew    = newIds.indexOf(b.id) !== -1;
+      var cell = document.createElement('div');
+      var cls  = 'badge-cell';
+      if (unlocked) cls += ' unlocked';
+      else if (b.secret && !unlocked) cls += ' locked-secret';
+      else cls += ' locked';
+      if (isNew) cls += ' new-badge';
+      cell.className = cls;
+      cell.innerHTML =
+        '<div class="badge-icon">' + b.icon + '</div>' +
+        '<div class="badge-name">' + (unlocked || !b.secret ? b.name : '???') + '</div>' +
+        '<div class="badge-desc">' + (unlocked || !b.secret ? b.desc : 'HIDDEN') + '</div>';
+      el.appendChild(cell);
+    });
+  }
+
+  var toastTimer = null;
+  var toastQueue = [];
+
+  function showAchievementToast(list) {
+    if (!list || list.length === 0) return;
+    list.forEach(function (id) {
+      var b = BADGES.find(function (x) { return x.id === id; });
+      if (!b) return;
+      toastQueue.push(b);
+    });
+    if (!toastTimer) drainToast();
+  }
+
+  function drainToast() {
+    if (toastQueue.length === 0) {
+      toastTimer = null;
+      return;
+    }
+    var b = toastQueue.shift();
+    var toast = document.getElementById('achievement-toast');
+    document.getElementById('toast-title').textContent = '\u2605 NEW BADGE: ' + b.name;
+    document.getElementById('toast-desc').textContent   = b.desc;
+    toast.classList.add('show');
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('show');
+      toastTimer = setTimeout(drainToast, 400);
+    }, 3000);
+  }
+
+  // Per-game in-memory trackers (reset each game)
+  var gameStartTime = 0;
+  var gameFood      = 0;
+  var gameTicks     = 0;
 
   // ── Game state ────────────────────────────────────────────
   var snake, dir, nextDir, food, score, gameOver, speed, lastTick;
@@ -673,6 +955,14 @@
     lbError.style.display     = 'none';
     lbNameIn.value = localStorage.getItem('snakeName') || '';
     spawnFood();
+    // Per-game stats trackers
+    gameStartTime = Date.now();
+    gameFood      = 0;
+    gameTicks     = 0;
+    // Increment games played
+    var stats = loadStats();
+    stats.gamesPlayed++;
+    saveStats(stats);
   }
 
   // ── Update ────────────────────────────────────────────────
@@ -688,6 +978,7 @@
 
     if (head.x === food.x && head.y === food.y) {
       score++;
+      gameFood++;
       elScore.textContent = score;
       var best = parseInt(localStorage.getItem('snakeBest') || '0', 10);
       if (score > best) {
@@ -697,6 +988,7 @@
       sfxEat();
       spawnFood();
       if (score % 5 === 0 && speed > 60) speed -= 4;
+      checkFoodAchievements();
     } else {
       snake.pop();
     }
@@ -713,7 +1005,78 @@
       activeSkin = newUnlock;
       localStorage.setItem('snakeSkin', newUnlock);
     }
+    checkAllAchievements();
     fetchLB();
+  }
+
+  // ── Achievement checks ─────────────────────────────────────
+  function checkFoodAchievements() {
+    var unlocked = loadAchievements();
+    var newUnlocked = [];
+    // Per-food achievements
+    if (gameFood >= 1 && unlocked.indexOf('first_blood') === -1) {
+      unlocked.push('first_blood'); newUnlocked.push('first_blood');
+    }
+    if (gameFood >= 50 && unlocked.indexOf('glutton') === -1) {
+      unlocked.push('glutton'); newUnlocked.push('glutton');
+    }
+    // Per-length achievements
+    if (snake.length >= 20 && unlocked.indexOf('behemoth') === -1) {
+      unlocked.push('behemoth'); newUnlocked.push('behemoth');
+    }
+    if (unlocked.indexOf('slowpoke') === -1 && score === 0 && gameFood === 0) {
+      // slowpoke is checked here too — eat 0 food and die
+    }
+    if (newUnlocked.length > 0) {
+      saveAchievements(unlocked);
+      showAchievementToast(newUnlocked);
+    }
+  }
+
+  function checkAllAchievements() {
+    var stats     = loadStats();
+    var unlocked  = loadAchievements();
+    var unlocks   = getUnlocks();
+    var gameTime  = Date.now() - gameStartTime;
+    var newUnlocked = [];
+
+    function unlock(id) {
+      if (unlocked.indexOf(id) === -1) {
+        unlocked.push(id);
+        newUnlocked.push(id);
+      }
+    }
+
+    // Per-game / score
+    if (gameTime < 15000 && unlocked.indexOf('speedrun') === -1) { unlock('speedrun'); }
+    if (gameTicks >= 300 && unlocked.indexOf('marathon') === -1) { unlock('marathon'); }
+    if (score >= 100 && unlocked.indexOf('highroller') === -1) { unlock('highroller'); }
+    if (speed <= 60 && unlocked.indexOf('speedster') === -1) { unlock('speedster'); }
+    if (score === 100 && unlocked.indexOf('centurion') === -1) { unlock('centurion'); }
+    if (unlocked.indexOf('slowpoke') === -1 && score === 0 && gameFood === 0) { unlock('slowpoke'); }
+
+    // Cumulative stats
+    if (stats.gamesPlayed >= 50  && unlocked.indexOf('addict') === -1)        { unlock('addict'); }
+    if (stats.gamesPlayed >= 200 && unlocked.indexOf('veteran') === -1)       { unlock('veteran'); }
+    if (unlocks.length >= 3     && unlocked.indexOf('unlocker') === -1)      { unlock('unlocker'); }
+    if (unlocks.length >= 6     && unlocked.indexOf('all_skins') === -1)     { unlock('all_skins'); }
+    if (stats.totalFood >= 500  && unlocked.indexOf('food_hoarder') === -1)  { unlock('food_hoarder'); }
+    if (stats.bestScore >= 500  && unlocked.indexOf('grandmaster') === -1)   { unlock('grandmaster'); }
+    if (stats.bestScore >= 1000 && unlocked.indexOf('legendary') === -1)     { unlock('legendary'); }
+
+    // Persist stats
+    stats.totalFood  += gameFood;
+    stats.totalTicks += gameTicks;
+    if (snake.length > stats.longestSnake) stats.longestSnake = snake.length;
+    if (score > stats.bestScore) stats.bestScore = score;
+    stats.totalDeaths++;
+    stats.totalTimeMs += gameTime;
+    saveStats(stats);
+
+    if (newUnlocked.length > 0) {
+      saveAchievements(unlocked);
+      showAchievementToast(newUnlocked);
+    }
   }
 
   // ── Draw ─────────────────────────────────────────────────
@@ -806,6 +1169,7 @@
   // ── Game loop ─────────────────────────────────────────────
   function loop(ts) {
     if (!gameOver && !menuActive && ts - lastTick >= speed) {
+      gameTicks++;
       update(ts);
       lastTick = ts;
     }
@@ -972,6 +1336,31 @@
     renderSkinGrid();
     skinModal.classList.add('show');
   });
+
+  menuStats.addEventListener('click', function () {
+    renderStats();
+    statsModal.classList.add('show');
+  });
+
+  menuBadges.addEventListener('click', function () {
+    renderBadges([]);
+    badgesModal.classList.add('show');
+  });
+
+  document.getElementById('stats-close').addEventListener('click', function () {
+    statsModal.classList.remove('show');
+  });
+  statsModal.addEventListener('click', function (e) {
+    if (e.target === statsModal) statsModal.classList.remove('show');
+  });
+
+  document.getElementById('badges-close').addEventListener('click', function () {
+    badgesModal.classList.remove('show');
+  });
+  badgesModal.addEventListener('click', function (e) {
+    if (e.target === badgesModal) badgesModal.classList.remove('show');
+  });
+
   document.getElementById('skin-close').addEventListener('click', function (e) {
     e.stopPropagation();
     skinModal.classList.remove('show');
