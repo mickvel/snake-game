@@ -8,11 +8,11 @@ A single-file Snake game with procedural chiptune music, a skin unlock system, a
 
 ## Screenshots
 
-### Leaderboard
-![Leaderboard](screenshots/leaderboard.png)
-
 ### Gameplay
 ![Gameplay](screenshots/gameplay.png)
+
+### Game Over / Leaderboard
+![Game Over / Leaderboard](screenshots/leaderboard.png)
 
 ### Skin Picker
 ![Skin Picker](screenshots/skins.png)
